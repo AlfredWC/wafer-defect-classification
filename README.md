@@ -435,7 +435,8 @@ This project lays the foundation for further exploration in wafer map classifica
 ---
 
 ## 8. Project Structure
-'''
+
+```
 wafer-defect-classification/
 ├── app.py
 ├── data
@@ -478,7 +479,9 @@ wafer-defect-classification/
 │   └── wu_features.py
 └── utils
     └── wu_viz.py
-'''
+```
+
+
 ---
 
 ## 9. Credits & References
