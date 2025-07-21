@@ -95,8 +95,6 @@ To mitigate the imbalance, an **autoencoder-based augmentation pipeline** was us
 | Scratch        | 2,146               |
 | none           | 13,406              |
 
----
-
 ### Training Logic Summary
 
 - The **Wu et al. SVM model** was trained on the full labeled wafer dataset, regardless of wafer size, using handcrafted features extracted from each map.
@@ -284,9 +282,7 @@ While the original Wu-style SVM was trained on all available labeled data (regar
   - `./images/wu_conf_matrix(augmented_data).png`  
   - `./images/wu_conf_matrix_norm(augmented_data).png`
 
-#### Note
-
-This approach helps determine whether handcrafted feature pipelines remain competitive when given the same class balance advantages typically reserved for neural networks.
+> This approach helps determine whether handcrafted feature pipelines remain competitive when given the same class balance advantages typically reserved for neural networks.
 
 ---
 
@@ -439,6 +435,7 @@ This project lays the foundation for further exploration in wafer map classifica
 ---
 
 ## 8. Project Structure
+'''
 wafer-defect-classification/
 ├── app.py
 ├── data
@@ -481,7 +478,7 @@ wafer-defect-classification/
 │   └── wu_features.py
 └── utils
     └── wu_viz.py
-
+'''
 ---
 
 ## 9. Credits & References
