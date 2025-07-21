@@ -1,5 +1,6 @@
-# 🔍 Wafer Defect Classification via Classical ML and CNNs on an Augmented Dataset
+# Wafer Defect Classification via Classical ML and CNNs on an Augmented Dataset
 
+## 1. Project Overview
 This project revisits and implements two foundational approaches for wafer map defect classification using the [WM-811K dataset](https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map) — a large-scale dataset of wafer maps collected from real semiconductor manufacturing lines:
 
 - A classical machine learning pipeline using SVM and handcrafted features, based on the work of [Wu et al.](https://doi.org/10.1109/TSM.2014.2364237)
@@ -15,25 +16,26 @@ You can recreate or download them as follows:
 - **Augmented dataset (`augmented_dataset.npz`)**: generate via `src/data_augmenter.py` (instructions in Section 4.2 of this README)  
 - **Pre-trained CNN (`cnn_model.h5`)**: train with `src/train_cnn_model.py` 
 
-## 💡 Motivation
+---
+
+## 2. Motivation
 
 This project began as an exploration into how machine learning and deep learning techniques can be applied to defect pattern classification in semiconductor manufacturing. Given the complexity of real wafer map distributions and the limited amount of labeled data, the goal was to study and visualize how different models behave, compare traditional and deep learning approaches, and investigate model explainability using Grad-CAM overlays on unlabeled wafer maps.
 
-## 📊 Dataset Summary
+---
+
+## 3. Dataset Summary
 
 This project uses the **WM-811K wafer map dataset**, which contains over 800,000 wafer images from real semiconductor manufacturing processes. Each wafer map is represented as a 2D grid where pixel values (0, 1, or 2) denote different die states (e.g., pass/fail/empty). Some maps are labeled with defect types, while others are unlabeled — reflecting real-world data imbalance in failure diagnosis.
 
-### 🔹 Key Properties
-
+### Key Properties
 - **Total wafers**: 811,457  
 - **Labeled wafers**: 172,950 (~21.3%)
 - **Unlabeled wafers**: 638,507 (~78.7%)
 - **Wafer map resolution**: Wafer sizes have a huge range, with maximum being (300, 202) and minimum being (6, 21). Number of unique wafer dimensions is 632.
 - **Label imbalance**: Over 85% of labeled wafers belong to the "none" (no defect) class
 
----
-
-### 🏷️ Defect Classes Explanation
+### Defect Classes Explanation
 
 | Class       | Description                              |
 |-------------|------------------------------------------|
@@ -47,9 +49,7 @@ This project uses the **WM-811K wafer map dataset**, which contains over 800,000
 | Scratch     | Line-shaped scratches                    |
 | none        | No clear pattern / normal wafer          |
 
----
-
-### 🔹 Labeled Wafer Distribution
+### Labeled Wafer Distribution
 
 |  | **Defect Type** | **Count** | **Percentage (%)** |
 |---|----------------|----------:|-------------------:|
@@ -63,9 +63,7 @@ This project uses the **WM-811K wafer map dataset**, which contains over 800,000
 | 7 | Scratch        |     1,193 |               0.69 |
 | 8 | none           |   147,431 |              85.24 |
 
----
-
-### 🔹 26×26 Labeled Wafer Maps (Before Augmentation)
+### 26×26 Labeled Wafer Maps (Before Augmentation)
 
 | **Defect Type** | **Count** |
 |----------------|----------:|
@@ -81,9 +79,7 @@ This project uses the **WM-811K wafer map dataset**, which contains over 800,000
 
 Due to the extremely low number of labeled 26×26 maps for minority classes (e.g., Donut, Near-full), model training using raw data alone would lead to severe class imbalance and poor generalization.
 
----
-
-### 🔹 Augmented Dataset (Used for CNN Training)
+### Augmented Dataset (Used for CNN Training)
 
 To mitigate the imbalance, an **autoencoder-based augmentation pipeline** was used to generate synthetic examples for underrepresented defect types. The resulting dataset is much more balanced across classes:
 
@@ -101,14 +97,16 @@ To mitigate the imbalance, an **autoencoder-based augmentation pipeline** was us
 
 ---
 
-### 🔹 Training Logic Summary
+### Training Logic Summary
 
 - The **Wu et al. SVM model** was trained on the full labeled wafer dataset, regardless of wafer size, using handcrafted features extracted from each map.
 - The **CNN model**, by contrast, was trained **only on the 26×26 maps** — using the **augmented dataset** to address imbalance and enforce uniform input dimensions (required by CNN layers).
 
 *Note: CNNs generally require fixed-size input tensors, which is why only 26×26 maps were used. Augmentation also helped prevent overfitting due to limited real samples per class.*
 
-## Methodology 
+---
+
+## 4. Methodology 
 
 ### 4.1 Wu et al. Feature-Based SVM Classification
 
@@ -116,7 +114,7 @@ This baseline classifier implements the classical approach proposed in [Wu et al
 
 The model was trained on the **entire original labeled dataset**, not restricted to 26×26 maps, allowing the feature extraction to leverage more spatial information from larger wafers.
 
-#### 🔍 Feature Extraction
+#### Feature Extraction
 
 Each wafer map is transformed into a **60-dimensional feature vector** combining three main descriptors:
 
@@ -139,7 +137,7 @@ Each wafer map is transformed into a **60-dimensional feature vector** combining
 
 These features are computed using `wu_features.py`, which modularizes each calculation for clarity and reuse.
 
-#### 🧠 Model Training and Evaluation
+#### Model Training and Evaluation
 
 The feature vectors are used to train a **One-vs-One Linear SVM classifier** (`train_wu_model.py`), implemented using scikit-learn:
 
@@ -161,6 +159,7 @@ Both versions of the confusion matrix are saved as PNG files and used later for 
 The trained model is saved as `wu_svm_model.pkl` and later reused in the dashboard and unlabeled wafer analysis.
 
 ---
+
 ### 4.2 Data Augmentation Pipeline
 
 To mitigate class imbalance and increase the effective sample size of labeled wafer maps, a convolutional autoencoder was trained to generate synthetic wafer maps for underrepresented defect types.
@@ -173,9 +172,7 @@ To mitigate class imbalance and increase the effective sample size of labeled wa
 - **Upsamples** minority defect classes and slightly **downsamples** the dominant `none` class.
 - Saves the augmented dataset to `data/augmented_dataset.npz` for use in supervised models.
 
----
-
-#### 📌 Key Design Steps
+#### Key Design Steps
 
 - **Why 26×26 maps?**  
   Many wafers in the LSWMD dataset vary in size. To ensure compatibility across CNN-based models, only samples with fixed 26×26 dimensions were selected.
@@ -196,9 +193,7 @@ To mitigate class imbalance and increase the effective sample size of labeled wa
   - Classes like `'Donut'`, `'Near-full'`, and `'Scratch'` were significantly underrepresented. These were **upsampled** to approximately ~2,000 samples each.
   - The `'none'` class (non-defective wafers), which dominates the labeled dataset, was **randomly downsampled** to maintain balance.
 
----
-
-#### 🧾 Output Summary
+#### Output Summary
 
 - Final dataset dimensions:  
   **Images:** `X.shape = (21044, 26, 26, 3)`  
@@ -208,22 +203,19 @@ To mitigate class imbalance and increase the effective sample size of labeled wa
   `./data/augmented_dataset.npz`
 
 ---
+
 ### 4.3 CNN Supervised Pipeline
 
 A supervised Convolutional Neural Network (CNN) was trained to classify wafer defect types using the **augmented 26×26 dataset** generated in the previous step. This section outlines the key design decisions and model implementation.
 
----
-
-#### 🎯 Why Augmented Data Only?
+#### Why Augmented Data Only?
 
 Unlike the Wu-SVM approach, which was trained on all original labeled data, the CNN model was trained **exclusively on the augmented 26×26 wafer maps**. This was done to:
 - Ensure input consistency with the CNN architecture.
 - Provide a more balanced and enriched dataset for training.
 - Leverage synthetic samples to improve generalization.
 
----
-
-#### 🏗️ Model Architecture
+#### Model Architecture
 
 The CNN was built using **Keras** and consisted of the following layers:
 - `Conv2D (64 filters, 3x3)` with ReLU activation  
@@ -236,9 +228,7 @@ The CNN was built using **Keras** and consisted of the following layers:
 
 This simple but effective architecture was chosen to keep training time short while capturing enough spatial structure to learn defect patterns.
 
----
-
-#### ⚙️ Training Setup
+#### Training Setup
 
 - **Loss Function:** Categorical Crossentropy  
 - **Optimizer:** Adam  
@@ -249,31 +239,27 @@ This simple but effective architecture was chosen to keep training time short wh
 
 The model was trained on the full augmented dataset without a train/validation split (since it was mostly used for inference on unlabeled data).
 
----
-
-#### 💾 Output
+#### Output
 
 - Trained model saved to:  
   `./models/cnn_model.h5`
 
 This CNN is later used to predict labels for previously unlabeled 26×26 wafer maps, enabling downstream explainability and inspection using Grad-CAM.
 
+---
+
 ### 4.4 Wu-SVM on Augmented Dataset
 
 To evaluate the effectiveness of data augmentation on traditional machine learning models, the Wu et al.-style SVM classifier was retrained using the same augmented dataset originally created for CNN training.
 
----
-
-#### 🧠 Why Re-Apply SVM to Augmented Data?
+#### Why Re-Apply SVM to Augmented Data?
 
 While the original Wu-style SVM was trained on all available labeled data (regardless of wafer map size), this version was retrained **only on the augmented 26×26 dataset**. This allowed:
 - Direct comparability with the CNN, which was also trained on 26×26 augmented samples
 - An opportunity to assess whether classical ML models also benefit from synthetic data balancing
 - A fairer baseline for measuring accuracy across architectures
 
----
-
-#### 🧩 Data Preparation
+#### Data Preparation
 
 - The augmented dataset (`augmented_dataset.npz`) was loaded from disk.
 - Pixel-wise one-hot encoded wafer maps (`X`) and one-hot class labels (`Y`) were reshaped:
@@ -281,9 +267,7 @@ While the original Wu-style SVM was trained on all available labeled data (regar
   - Labels: `Y.argmax(axis=1)` converted from one-hot to class indices
 - Handcrafted features were re-extracted from each wafer map using the same method described in [Section 4.1](#41-wu-style-handcrafted-feature-extraction).
 
----
-
-#### ⚙️ Model Training & Evaluation
+#### Model Training & Evaluation
 
 - The extracted features were used to train a **One-vs-One Linear SVM** via `scikit-learn`.
 - Model was evaluated on a train/test split (same logic as original Wu-SVM).
@@ -292,9 +276,7 @@ While the original Wu-style SVM was trained on all available labeled data (regar
   - Accuracy metrics
   - Confusion matrix visualizations
 
----
-
-#### 💾 Output
+#### Output
 
 - Trained model saved as:  
   `./models/wu_svm_model_expanded.pkl`
@@ -302,9 +284,7 @@ While the original Wu-style SVM was trained on all available labeled data (regar
   - `./images/wu_conf_matrix(augmented_data).png`  
   - `./images/wu_conf_matrix_norm(augmented_data).png`
 
----
-
-#### 📝 Note
+#### Note
 
 This approach helps determine whether handcrafted feature pipelines remain competitive when given the same class balance advantages typically reserved for neural networks.
 
@@ -365,7 +345,7 @@ Combining handcrafted features with traditional ML methods is still a valid appr
 
 ---
 
-### 6. Applying CNN to Unlabeled Wafer Maps (w/ Grad-CAM Explainability)
+## 6. Applying CNN to Unlabeled Wafer Maps (w/ Grad-CAM Explainability)
 
 After training the CNN classifier on the augmented 26×26 dataset, the model was deployed to infer labels for unlabeled wafer maps in the original dataset.
 
@@ -376,14 +356,13 @@ These predictions allow partial labeling of previously unlabeled data, which is 
 - Pattern mining in yield excursions.
 - Monitoring for known failure modes in fab environments.
 
-> 📌 **Note:** Only predictions exceeding a softmax confidence of 0.95 were retained.
+> **Note:** Only predictions exceeding a softmax confidence of 0.95 were retained.
 
 All predictions were generated using the script: `./src/generate_gradcam_comparisons.py`
 
-
 ---
 
-#### 🔍 Grad-CAM: Visualizing CNN Attention
+### 6.1 Grad-CAM: Visualizing CNN Attention
 
 To better understand the CNN’s decision-making process, **Grad-CAM (Gradient-weighted Class Activation Mapping)** was applied to visualize which regions of each wafer map influenced the final prediction.
 
@@ -444,10 +423,11 @@ These visualizations provide key insights:
 - **Low-confidence predictions** show diffused or scattered attention, indicating ambiguity in the pattern.
 - The CNN learns to attend to intuitive defect areas — e.g., outer rings in *Edge-Ring* maps, or central voids in *Donut* patterns — confirming some level of explainability.
 
-> 🧠 Grad-CAM played a crucial role in assessing the reliability of the CNN predictions, especially for application to unlabeled data.
+> Grad-CAM played a crucial role in assessing the reliability of the CNN predictions, especially for application to unlabeled data.
 
 ---
-### 7. Future Work
+
+## 7. Future Work
 
 This project lays the foundation for further exploration in wafer map classification. Potential next steps include:
 
@@ -457,38 +437,51 @@ This project lays the foundation for further exploration in wafer map classifica
 - **Benchmarking against additional datasets** or creating synthetic ones to simulate rare failure types.
 
 ---
-### 8. Project Structure
+
+## 8. Project Structure
 wafer-defect-classification/
-├── app.py # Streamlit dashboard app
-├── data/
-│ ├── LSWMD.pkl # Original dataset (pickled)
-│ ├── augmented_dataset.npz # Augmented training dataset (npz)
-│ ├── high_confidence_unlabeled_preds_95.pkl # CNN predictions (95%+ confidence)
-├── images/
-│ ├── cnn_conf_matrix.png
-│ ├── cnn_conf_matrix_norm.png
-│ ├── wu_conf_matrix(original_data).png
-│ ├── wu_conf_matrix_norm(original_data).png
-│ ├── wu_conf_matrix(augmented_data).png
-│ ├── wu_conf_matrix_norm(augmented_data).png
-│ ├── gradcam_Center_high.png # Grad-CAM visualization examples
-│ └── ... # More grad-cam images
-├── models/
-│ ├── cnn_model.h5 # Trained CNN model
-│ ├── wu_svm_model.pkl # Trained Wu SVM model
-│ └── wu_svm_model_expanded.pkl # (Optional) SVM trained on augmented data
-├── src/
-│ ├── data_augmenter.py # Script for autoencoder augmentation
-│ ├── generate_gradcam_comparisons.py # Grad-CAM generation script
-│ ├── train_cnn_model.py # CNN training pipeline
-│ ├── train_wu_model.py # Wu-style SVM training
-│ ├── train_wu_model_expanded.py # Wu-style SVM training on augmented data
-│ ├── conf_matrices.py # Script for saving confusion matrix as image
-│ └── wu_features.py # Feature extractor for Wu et al. method
-├── utils/
-│ └── wu_viz.py # Script for confusion matrix format
-├── requirements.txt # Python dependencies
-└── README.md # Project documentation
+├── app.py
+├── data
+│   └── high_confidence_unlabeled_preds_95.pkl
+├── images
+│   ├── cnn_conf_matrix_norm.png
+│   ├── cnn_conf_matrix.png
+│   ├── gradcam_Center_high.png
+│   ├── gradcam_Center_low.png
+│   ├── gradcam_Edge-Loc_high.png
+│   ├── gradcam_Edge-Loc_low.png
+│   ├── gradcam_Edge-Ring_high.png
+│   ├── gradcam_Edge-Ring_low.png
+│   ├── gradcam_Loc_high.png
+│   ├── gradcam_Loc_low.png
+│   ├── gradcam_Near-full_high.png
+│   ├── gradcam_Near-full_low.png
+│   ├── gradcam_none_high.png
+│   ├── gradcam_none_low.png
+│   ├── gradcam_Random_high.png
+│   ├── gradcam_Random_low.png
+│   ├── gradcam_Scratch_high.png
+│   ├── gradcam_Scratch_low.png
+│   ├── wu_conf_matrix_norm(augmented_data).png
+│   ├── wu_conf_matrix_norm(original_data).png
+│   ├── wu_conf_matrix(augmented_data).png
+│   └── wu_conf_matrix(original_data).png
+├── models
+│   ├── wu_svm_model_expanded.pkl
+│   └── wu_svm_model.pkl
+├── README.md
+├── requirements.txt
+├── src
+│   ├── conf_matrices.py
+│   ├── data_augmenter.py
+│   ├── generate_gradcam_comparisons.py
+│   ├── train_cnn_model.py
+│   ├── train_wu_model_expanded.py
+│   ├── train_wu_model.py
+│   └── wu_features.py
+└── utils
+    └── wu_viz.py
+
 ---
 
 ## 9. Credits & References
